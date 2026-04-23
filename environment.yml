@@ -1,0 +1,19 @@
+name: DPPP
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  - pandas
+  - openpyxl
+  - pysam
+  - colorama
+  - seqkit
+  - minimap2
+  - samtools
+  - flye
+  - kraken2
+  - blast
+  - recentrifuge
+  - pip

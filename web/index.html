@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pathogen Pipeline Launcher</title>
+  <style>
+    :root {
+      --ink: #17211a;
+      --muted: #657268;
+      --paper: #fbf8ef;
+      --panel: rgba(255, 252, 242, 0.88);
+      --line: #ded3bd;
+      --leaf: #315f46;
+      --leaf-2: #668f57;
+      --gold: #c6922f;
+      --danger: #a33b2f;
+      --shadow: 0 24px 70px rgba(55, 47, 28, 0.18);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Aptos Display", "Segoe UI", "Noto Sans TC", sans-serif;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(198, 146, 47, 0.20), transparent 28rem),
+        radial-gradient(circle at 92% 0%, rgba(49, 95, 70, 0.18), transparent 34rem),
+        linear-gradient(135deg, #f6efe0 0%, #fdfaf2 52%, #edf4e9 100%);
+    }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 36px 0 48px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(49, 95, 70, 0.18);
+      border-radius: 34px;
+      padding: clamp(28px, 5vw, 56px);
+      background:
+        linear-gradient(120deg, rgba(255,255,255,.82), rgba(255,255,255,.48)),
+        repeating-linear-gradient(90deg, rgba(49,95,70,.06) 0 1px, transparent 1px 18px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 360px;
+      height: 360px;
+      right: -120px;
+      top: -100px;
+      border-radius: 50%;
+      background: conic-gradient(from 20deg, rgba(49,95,70,.16), rgba(198,146,47,.20), rgba(49,95,70,.08));
+      filter: blur(1px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 7px 13px;
+      border: 1px solid rgba(49, 95, 70, 0.22);
+      border-radius: 999px;
+      color: var(--leaf);
+      background: rgba(255, 252, 242, .72);
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: .03em;
+    }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(34px, 6vw, 72px);
+      line-height: .98;
+      letter-spacing: -0.055em;
+    }
+
+    .intro {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 22px 0 0;
+      color: #465247;
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(330px, .9fr);
+      gap: 22px;
+      margin-top: 24px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel);
+      box-shadow: 0 14px 38px rgba(55, 47, 28, 0.10);
+      backdrop-filter: blur(8px);
+    }
+
+    form.card { padding: 24px; }
+    .side.card { padding: 22px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin: 0 0 16px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #d8cfbd;
+      border-radius: 15px;
+      padding: 12px 13px;
+      color: var(--ink);
+      background: rgba(255,255,255,.78);
+      font: inherit;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--leaf-2);
+      box-shadow: 0 0 0 4px rgba(102, 143, 87, .16);
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      background: #fffdf7;
+    }
+
+    .full { grid-column: 1 / -1; }
+
+    details {
+      grid-column: 1 / -1;
+      border: 1px dashed #cdbf9f;
+      border-radius: 20px;
+      padding: 14px;
+      background: rgba(255, 255, 255, .36);
+    }
+
+    summary {
+      cursor: pointer;
+      color: var(--leaf);
+      font-weight: 800;
+      user-select: none;
+    }
+
+    .checks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 11px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.62);
+      color: #526052;
+      font-size: 13px;
+    }
+
+    .check input { width: auto; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 20px;
+      color: white;
+      background: linear-gradient(135deg, var(--leaf), #1e3f31);
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(49, 95, 70, .24);
+    }
+
+    button.secondary {
+      color: var(--leaf);
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(49,95,70,.2);
+      box-shadow: none;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: .55;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(198, 146, 47, .15);
+      color: #765614;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .status.finished { background: rgba(49,95,70,.15); color: var(--leaf); }
+    .status.failed, .status.cancelled { background: rgba(163,59,47,.14); color: var(--danger); }
+
+    pre {
+      min-height: 260px;
+      max-height: 520px;
+      overflow: auto;
+      margin: 14px 0 0;
+      padding: 15px;
+      border-radius: 18px;
+      color: #f2f6ec;
+      background: #17211a;
+      font: 12px/1.55 "Cascadia Mono", Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    .files {
+      display: grid;
+      gap: 9px;
+      margin-top: 14px;
+    }
+
+    .file-link {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 13px;
+      border: 1px solid #ded3bd;
+      border-radius: 15px;
+      color: var(--ink);
+      background: rgba(255,255,255,.64);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .file-link span:last-child {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .toast {
+      margin-top: 12px;
+      color: var(--danger);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    @media (max-width: 900px) {
+      .layout, .grid { grid-template-columns: 1fr; }
+      .checks { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">Local browser UI + WSL pipeline runner</div>
+      <h1>Detect potential pathogen genome</h1>
+      <p class="intro">
+        選擇 reads 檔案、填入 sample ID 與資料庫路徑後，這個介面會透過本機 API 呼叫原本的
+        <strong>Detect_potential_pathogen_pipeline.py</strong>。Windows 使用者可用 WSL 執行分析，但全程用瀏覽器操作。
+      </p>
+    </section>
+
+    <section class="layout">
+      <form id="jobForm" class="card">
+        <h2 class="section-title">Run pipeline <span id="health" class="hint">checking server...</span></h2>
+
+        <div class="grid">
+          <label class="full">
+            Reads FASTQ / FASTA
+            <input name="reads" type="file" accept=".fastq,.fq,.fasta,.fa,.fastq.gz,.fq.gz,.fasta.gz,.fa.gz,.gz" required>
+          </label>
+
+          <label>
+            Sample ID
+            <input name="sample_id" placeholder="Sample_001" required>
+          </label>
+
+          <label>
+            Runtime
+            <select name="runtime">
+              <option value="auto">auto: Windows uses WSL</option>
+              <option value="wsl">WSL</option>
+              <option value="native">native Python</option>
+            </select>
+          </label>
+
+          <label>
+            Threads
+            <input name="threads" type="number" min="1" value="8">
+          </label>
+
+          <label>
+            Minimum read length
+            <input name="min_len" type="number" min="1" value="200">
+          </label>
+
+          <label class="full">
+            Human minimap2 index
+            <input name="human_index" placeholder="/home/user/reference/hg38.mmi" required>
+          </label>
+
+          <details open>
+            <summary>Database and report settings</summary>
+            <div class="grid" style="margin-top:14px">
+              <label>
+                Kraken2 DB
+                <input name="kraken_db" value="/home/yilun/YiLun/kraken_database/standard">
+              </label>
+              <label>
+                Recentrifuge taxonomy DB
+                <input name="rcf_taxdb" value="/home/yilun/YiLun/kraken_database/standard">
+              </label>
+              <label>
+                Recentrifuge conda env
+                <input name="rcf_env" value="DPPP">
+              </label>
+              <label>
+                Kraken confidence
+                <input name="kraken_sc" type="number" step="0.01" min="0" max="1" value="0.2">
+              </label>
+              <label class="full">
+                Optional output folder on this computer
+                <input name="outdir" placeholder="leave empty to use web_runs/results">
+              </label>
+            </div>
+          </details>
+
+          <details>
+            <summary>Skip selected steps for testing or reruns</summary>
+            <div class="checks">
+              <label class="check"><input name="skip_len_filter" type="checkbox"> skip length filter</label>
+              <label class="check"><input name="skip_rm_human" type="checkbox"> skip human removal</label>
+              <label class="check"><input name="skip_flye" type="checkbox"> skip Flye</label>
+              <label class="check"><input name="skip_kraken" type="checkbox"> skip Kraken</label>
+              <label class="check"><input name="skip_mapping" type="checkbox"> skip mapping</label>
+              <label class="check"><input name="skip_blast" type="checkbox"> skip blastn</label>
+            </div>
+          </details>
+        </div>
+
+        <div class="actions">
+          <button id="submitBtn" type="submit">Start analysis</button>
+          <button id="cancelBtn" type="button" class="secondary" disabled>Cancel current job</button>
+          <span class="hint">執行中請保持 server terminal 開啟。</span>
+        </div>
+
+        <div id="error" class="toast" hidden></div>
+      </form>
+
+      <aside class="side card">
+        <h2 class="section-title">Job monitor <span id="status" class="status">idle</span></h2>
+        <div class="hint" id="jobMeta">尚未送出工作。</div>
+        <pre id="logBox">Pipeline log will appear here after a job starts.</pre>
+        <div id="files" class="files"></div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("jobForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const cancelBtn = document.getElementById("cancelBtn");
+    const errorBox = document.getElementById("error");
+    const logBox = document.getElementById("logBox");
+    const statusPill = document.getElementById("status");
+    const filesBox = document.getElementById("files");
+    const jobMeta = document.getElementById("jobMeta");
+    const health = document.getElementById("health");
+
+    let currentJobId = null;
+    let pollTimer = null;
+
+    function humanSize(bytes) {
+      const units = ["B", "KB", "MB", "GB"];
+      let n = Number(bytes || 0);
+      let i = 0;
+      while (n >= 1024 && i < units.length - 1) {
+        n /= 1024;
+        i += 1;
+      }
+      return `${n.toFixed(i ? 1 : 0)} ${units[i]}`;
+    }
+
+    function setStatus(text) {
+      statusPill.textContent = text;
+      statusPill.className = `status ${text}`;
+      submitBtn.disabled = text === "running" || text === "queued";
+      cancelBtn.disabled = !(currentJobId && text === "running");
+    }
+
+    function showError(message) {
+      errorBox.hidden = !message;
+      errorBox.textContent = message || "";
+    }
+
+    async function refreshJob() {
+      if (!currentJobId) return;
+      const res = await fetch(`/api/jobs/${encodeURIComponent(currentJobId)}`);
+      if (!res.ok) return;
+      const job = await res.json();
+      renderJob(job);
+      if (!["finished", "failed", "cancelled"].includes(job.status)) {
+        pollTimer = setTimeout(refreshJob, 3000);
+      }
+    }
+
+    function renderJob(job) {
+      setStatus(job.status);
+      jobMeta.innerHTML = `
+        <strong>${job.sample_id}</strong><br>
+        Job ID: ${job.id}<br>
+        Output: ${job.final_dir}
+      `;
+      const webLog = job.logs?.web_runner || "";
+      const pipelineLog = job.logs?.pipeline || "";
+      logBox.textContent = pipelineLog || webLog || "Waiting for pipeline output...";
+      logBox.scrollTop = logBox.scrollHeight;
+
+      filesBox.innerHTML = "";
+      if (job.summary_url) {
+        const a = document.createElement("a");
+        a.className = "file-link";
+        a.href = job.summary_url;
+        a.target = "_blank";
+        a.innerHTML = "<span>Open summary report</span><span>HTML</span>";
+        filesBox.appendChild(a);
+      }
+      for (const file of job.files || []) {
+        const a = document.createElement("a");
+        a.className = "file-link";
+        a.href = file.url;
+        a.target = "_blank";
+        a.innerHTML = `<span>${file.name}</span><span>${humanSize(file.size)}</span>`;
+        filesBox.appendChild(a);
+      }
+      if (job.error) showError(job.error);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      showError("");
+      setStatus("queued");
+      logBox.textContent = "Uploading reads and starting pipeline...";
+      filesBox.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/jobs", {
+          method: "POST",
+          body: new FormData(form)
+        });
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.error || "Failed to start job");
+        currentJobId = payload.id;
+        if (pollTimer) clearTimeout(pollTimer);
+        renderJob(payload);
+        pollTimer = setTimeout(refreshJob, 1500);
+      } catch (err) {
+        setStatus("failed");
+        showError(err.message);
+      }
+    });
+
+    cancelBtn.addEventListener("click", async () => {
+      if (!currentJobId) return;
+      await fetch(`/api/jobs/${encodeURIComponent(currentJobId)}/cancel`, { method: "POST" });
+      await refreshJob();
+    });
+
+    fetch("/api/health")
+      .then((res) => res.json())
+      .then((data) => {
+        health.textContent = data.wsl_available ? "server OK, WSL detected" : "server OK";
+      })
+      .catch(() => {
+        health.textContent = "server not reachable";
+      });
+  </script>
+</body>
+</html>
