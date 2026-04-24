@@ -166,6 +166,37 @@ def parse_coverage_detailed(fp: Path) -> dict | None:
     except Exception:
         return None
 
+def cleanup_mapping_bams(root_dir: Path) -> tuple[int, int]:
+    bam_removed = 0
+    bai_removed = 0
+    if not root_dir.exists():
+        return bam_removed, bai_removed
+
+    for bam_fp in root_dir.rglob("*.bam"):
+        bam_fp.unlink(missing_ok=True)
+        bam_removed += 1
+
+    for bai_fp in root_dir.rglob("*.bai"):
+        bai_fp.unlink(missing_ok=True)
+        bai_removed += 1
+
+    return bam_removed, bai_removed
+
+def cleanup_bam_pair(bam_path: Path) -> tuple[int, int]:
+    bam_removed = 0
+    bai_removed = 0
+    bai_path = Path(str(bam_path) + ".bai")
+
+    if bam_path.exists():
+        bam_path.unlink(missing_ok=True)
+        bam_removed = 1
+
+    if bai_path.exists():
+        bai_path.unlink(missing_ok=True)
+        bai_removed = 1
+
+    return bam_removed, bai_removed
+
 def main():
     project_root = Path(__file__).resolve().parents[1]
     default_kraken_html_script = project_root / "tools" / "kraken2_html_excel_report.py"
@@ -302,6 +333,12 @@ def main():
         )
 
         ensure_exists(rmhum_fastq, "去人類後 reads FASTQ")
+        human_bam_removed, human_bai_removed = cleanup_bam_pair(human_bam)
+        note(
+            f"[INFO] cleaned human mapping intermediates: "
+            f"{human_bam_removed} BAM, {human_bai_removed} BAI removed from {step2_dir}",
+            log_fp
+        )
         note(f"STEP 2 DONE: {rmhum_fastq}", log_fp)
 
     # -------------------------
@@ -667,6 +704,12 @@ def main():
         log_fp
     )
     ensure_exists(summary_html, "summary html report")
+    bam_removed, bai_removed = cleanup_mapping_bams(mapping_dir)
+    note(
+        f"[INFO] cleaned mapping intermediates after summary: "
+        f"{bam_removed} BAM, {bai_removed} BAI removed from {mapping_dir}",
+        log_fp
+    )
     note(f"[INFO] summary html 已生成：{summary_html}", log_fp)
 
 
