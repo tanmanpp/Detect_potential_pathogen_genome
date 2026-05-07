@@ -6,15 +6,19 @@ small local Python API server, then the server runs `tools/Detect_potential_path
 
 ## Start the web UI
 
-Create the shared conda environment first:
+Create both conda environments first:
 
 ```bash
 conda env create -f environment.yml
+conda env create -f environment.recentrifuge.yml
 conda activate DPPP
 ```
 
-Windows users should create and run `DPPP` inside WSL because the pipeline
+Windows users should create and run these environments inside WSL because the pipeline
 depends on Linux bioinformatics tools.
+
+The main pipeline runs in `DPPP`. Recentrifuge runs in a separate environment
+named `DPPP-rcf`, because it may require a newer Python version.
 
 On Windows, open WSL first and move to the project folder. For example:
 
@@ -28,8 +32,8 @@ Then start the GUI from WSL, macOS, or Linux:
 bash start_pipeline_web.sh
 ```
 
-The shell script activates `DPPP` and creates it from `environment.yml` if
-needed.
+The shell script activates `DPPP` and creates both `DPPP` and `DPPP-rcf` from
+their YAML files if needed.
 
 Then open:
 
@@ -57,10 +61,14 @@ Set these before starting the server if needed:
 ```text
 PATHOGEN_WEB_RUNTIME=wsl
 PATHOGEN_WEB_WSL_DISTRO=Ubuntu
+PATHOGEN_RCF_ENV=DPPP-rcf
 ```
 
 `PATHOGEN_WEB_WSL_DISTRO` is optional. Leave it empty to use the default WSL
 distribution.
+
+`PATHOGEN_RCF_ENV` is optional. Use it only if your Recentrifuge environment is
+named something other than `DPPP-rcf`.
 
 ## Flye behavior
 

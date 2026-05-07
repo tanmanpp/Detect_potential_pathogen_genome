@@ -3,20 +3,24 @@
 This repository provides a Python-based pathogen detection pipeline and a local
 browser GUI for colleagues who are less familiar with command-line workflows.
 
-## 1. Create the DPPP conda environment
+## 1. Create the conda environments
 
 Windows users should create this environment inside WSL. macOS/Linux users can
 create it directly in their terminal.
 
 ```bash
 conda env create -f environment.yml
+conda env create -f environment.recentrifuge.yml
 conda activate DPPP
 ```
 
-The environment name is fixed as `DPPP`. It includes Python packages and command
-line tools used by the pipeline, including `seqkit`, `minimap2`, `samtools`,
-`flye`, `kraken2`, `blast`, `recentrifuge`, `pandas`, `openpyxl`, `pysam`, and
-`colorama`.
+The main pipeline environment is fixed as `DPPP`. It includes the Python
+packages and command line tools used by the main workflow, including `seqkit`,
+`minimap2`, `samtools`, `flye`, `kraken2`, `blast`, `pandas`, `openpyxl`,
+`pysam`, and `colorama`.
+
+Recentrifuge is installed in a separate environment named `DPPP-rcf`, because
+it may require a newer Python version than the main pipeline environment.
 
 ## 2. Start the browser GUI
 
@@ -33,8 +37,8 @@ Then start the GUI from WSL, macOS, or Linux:
 bash start_pipeline_web.sh
 ```
 
-The shell script activates `DPPP` and creates it from `environment.yml` if the
-environment is missing.
+The shell script activates `DPPP` and creates both `DPPP` and `DPPP-rcf` from
+their YAML files if they are missing.
 
 Then open:
 
@@ -54,7 +58,8 @@ python tools/Detect_potential_pathogen_pipeline.py \
   -i reads.fastq \
   -sid Sample_001 \
   -o output \
-  --human_index /path/to/hg38.mmi
+  --human_index /path/to/hg38.mmi \
+  --rcf_env DPPP-rcf
 ```
 
 ## 4. Flye failure behavior

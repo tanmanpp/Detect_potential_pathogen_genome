@@ -223,7 +223,7 @@ def main():
 
     # Step 4: kraken2 + rcf
     ap.add_argument("--kraken_db", default="/home/yilun/YiLun/kraken_database/standard", help="Kraken2 DB 路徑")
-    ap.add_argument("--rcf_env", default="DPPP", help="recentrifuge 的 conda env 名稱")
+    ap.add_argument("--rcf_env", default="DPPP-rcf", help="recentrifuge 的 conda env 名稱")
     ap.add_argument("--rcf_taxdb", default="/home/yilun/YiLun/kraken_database/standard", help="rcf -n 指向的 taxonomy/db 路徑")
     ap.add_argument("--kraken_sc", type=float, default=0.2, help="Kraken2 confidence score cutoff（k2 --confidence）")
     ap.add_argument("--kraken_html_script", default=str(default_kraken_html_script), help="生成 Kraken2 HTML 和 Excel 報告的 python 腳本路徑")

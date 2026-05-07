@@ -34,6 +34,7 @@ WEB_DIR = PROJECT_ROOT / "web"
 RUNS_DIR = PROJECT_ROOT / "web_runs"
 JOBS_DIR = RUNS_DIR / "jobs"
 RESULTS_DIR = RUNS_DIR / "results"
+DEFAULT_RCF_ENV = os.environ.get("PATHOGEN_RCF_ENV", "DPPP-rcf")
 
 PIPELINE_SCRIPT = TOOLS_DIR / "Detect_potential_pathogen_pipeline.py"
 SUMMARY_SCRIPT = TOOLS_DIR / "generate_pipeline_summary_html.py"
@@ -157,7 +158,7 @@ def build_pipeline_args(fields: dict[str, str], reads_path: Path, outdir: Path, 
         "--min_len", min_len,
         "--human_index", user_path(human_index, runtime),
         "--kraken_db", user_path(get_field(fields, "kraken_db", "/home/yilun/YiLun/kraken_database/standard"), runtime),
-        "--rcf_env", get_field(fields, "rcf_env", "DPPP"),
+        "--rcf_env", get_field(fields, "rcf_env", DEFAULT_RCF_ENV),
         "--rcf_taxdb", user_path(get_field(fields, "rcf_taxdb", "/home/yilun/YiLun/kraken_database/standard"), runtime),
         "--kraken_sc", kraken_sc,
         "--kraken_html_script", runtime_path(KRAKEN_HTML_SCRIPT, runtime),
