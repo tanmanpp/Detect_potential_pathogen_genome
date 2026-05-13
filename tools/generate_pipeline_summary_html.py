@@ -7,6 +7,7 @@ import html
 import os
 import re
 import json
+from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import quote, quote_plus
@@ -484,7 +485,21 @@ def render_blast_section(blast_data, final_dir: Path) -> str:
     return "".join(out)
 
 
-def render_index(mapping_data, blast_data) -> str:
+def build_sample_info(sid: str, final_dir: Path, fastq_path: Path = None, upset_data: dict = None) -> list[tuple[str, str]]:
+    info = [
+        ("Sample ID", sid),
+        ("Report generated", datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        ("Final results", str(final_dir)),
+    ]
+    if fastq_path is not None:
+        info.append(("Input FASTQ", fastq_path.name))
+        info.append(("Input FASTQ path", str(fastq_path)))
+    if upset_data and upset_data.get("fastq_total") is not None:
+        info.append(("Input reads", f"{upset_data['fastq_total']:,}"))
+    return info
+
+
+def render_index(mapping_data, blast_data, sample_info) -> str:
     mapping_counts = {k: len(v) for k, v in mapping_data.items()}
     blast_counts = {
         k: {
@@ -493,6 +508,15 @@ def render_index(mapping_data, blast_data) -> str:
         }
         for k, v in blast_data.items()
     }
+    sample_info_html = "".join(
+        f"""
+        <div class="sample-info-item">
+          <div class="sample-info-label">{html.escape(label)}</div>
+          <div class="sample-info-value">{html.escape(value)}</div>
+        </div>
+        """
+        for label, value in sample_info
+    )
 
     return f"""
     <section class="hero">
@@ -501,6 +525,9 @@ def render_index(mapping_data, blast_data) -> str:
           <h1 style="margin:0 0 6px">Pathogen Pipeline Summary</h1>
           <p style="margin:0;opacity:.8">此報告整理 <strong>Mapping</strong> 與 <strong>Blast virulence</strong> 結果。</p>
         </div>
+      </div>
+      <div class="sample-info">
+        {sample_info_html}
       </div>
       <div class="grid">
         <a class="stat virus"    href="#mapping-Virus"><div class="label">🦠 Virus mapping</div><div class="value">{mapping_counts.get("Virus", 0)}</div></a>
@@ -885,8 +912,10 @@ def build_html(final_dir: Path, sid: str, mapping_reads_dir: Path = None, fastq_
         fastq_ids  = read_fastq_ids(fastq_path) if fastq_path else None
         upset_data = collect_mapping_bam_pie_data(mapping_reads_dir, fastq_ids=fastq_ids)
 
+    sample_info = build_sample_info(sid, final_dir, fastq_path=fastq_path, upset_data=upset_data)
+
     body = []
-    body.append(render_index(mapping_data, blast_data))
+    body.append(render_index(mapping_data, blast_data, sample_info))
     if upset_data is not None:
         body.append(render_upset_section(upset_data))
     body.append(render_mapping_section(mapping_data, final_dir))
@@ -954,6 +983,31 @@ a:hover {{ text-decoration: underline; }}
 }}
 .hero-title {{ margin-bottom: 20px; }}
 .hero h1 {{ font-size: 22px; letter-spacing: .3px; }}
+
+.sample-info {{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 0 0 20px;
+}}
+.sample-info-item {{
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+}}
+.sample-info-label {{
+  font-size: 11px;
+  color: #c5d0f0;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}}
+.sample-info-value {{
+  font-size: 14px;
+  font-weight: 600;
+  word-break: break-word;
+}}
 
 .grid {{
   display: grid;

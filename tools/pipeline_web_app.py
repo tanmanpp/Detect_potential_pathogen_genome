@@ -109,8 +109,25 @@ def windows_path_to_wsl(path: Path | str) -> str:
     return f"/mnt/{drive}/{rest}"
 
 
+def wsl_path_to_windows(path: Path | str) -> str:
+    raw = str(path).strip()
+    match = re.match(r"^/mnt/([A-Za-z])/(.*)$", raw)
+    if not match:
+        return raw
+    drive = match.group(1).upper()
+    rest = match.group(2).replace("/", "\\")
+    return f"{drive}:\\{rest}" if rest else f"{drive}:\\"
+
+
 def looks_like_windows_path(value: str) -> bool:
     return bool(re.match(r"^[A-Za-z]:[\\/]", value.strip()))
+
+
+def clean_user_path(value: str) -> str:
+    value = value.strip()
+    while len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        value = value[1:-1].strip()
+    return value
 
 
 def runtime_path(value: Path | str, runtime: str) -> str:
@@ -122,12 +139,42 @@ def runtime_path(value: Path | str, runtime: str) -> str:
 
 
 def user_path(value: str, runtime: str) -> str:
-    value = value.strip()
+    value = clean_user_path(value)
     if not value:
         return value
-    if runtime == "wsl" and looks_like_windows_path(value):
-        return windows_path_to_wsl(value)
+    if looks_like_windows_path(value):
+        if runtime == "wsl" or os.name != "nt":
+            return windows_path_to_wsl(value)
+        return value
+    if value.startswith("/mnt/") and runtime == "native" and os.name == "nt":
+        return wsl_path_to_windows(value)
     return value
+
+
+def resolve_output_dir(value: str, runtime: str) -> Path:
+    value = clean_user_path(value)
+    if not value:
+        return RESULTS_DIR.resolve()
+
+    # On WSL/Linux hosts, accept Windows-style absolute paths from the UI.
+    if os.name != "nt" and looks_like_windows_path(value):
+        return Path(windows_path_to_wsl(value)).expanduser().resolve()
+
+    if runtime == "wsl":
+        # If the UI sends a Windows path while the pipeline runs in WSL,
+        # keep it as a local Windows path on Windows hosts, but convert it to
+        # a WSL mount path on POSIX hosts.
+        if looks_like_windows_path(value):
+            if os.name == "nt":
+                return Path(value).expanduser().resolve()
+            return Path(windows_path_to_wsl(value)).expanduser().resolve()
+
+        # If the server itself runs on Windows and the UI sends a WSL mount
+        # path, convert it back so the local server can create directories.
+        if os.name == "nt" and value.startswith("/mnt/"):
+            return Path(wsl_path_to_windows(value)).expanduser().resolve()
+
+    return Path(value).expanduser().resolve()
 
 
 def parse_bool(value: str | None) -> bool:
@@ -141,7 +188,7 @@ def get_field(fields: dict[str, str], name: str, default: str = "") -> str:
 
 def build_pipeline_args(fields: dict[str, str], reads_path: Path, outdir: Path, runtime: str) -> list[str]:
     sample_id = sanitize_id(get_field(fields, "sample_id"))
-    human_index = get_field(fields, "human_index")
+    human_index = clean_user_path(get_field(fields, "human_index"))
     if not human_index:
         raise ValueError("human_index is required")
 
@@ -433,7 +480,7 @@ class Handler(BaseHTTPRequestHandler):
                 reads_path.write_bytes(data)
 
                 outdir_text = get_field(fields, "outdir")
-                outdir = Path(outdir_text).expanduser().resolve() if outdir_text else RESULTS_DIR.resolve()
+                outdir = resolve_output_dir(outdir_text, runtime)
                 outdir.mkdir(parents=True, exist_ok=True)
 
                 pipeline_args = build_pipeline_args(fields, reads_path, outdir, runtime)
